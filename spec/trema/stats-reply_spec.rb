@@ -179,16 +179,20 @@ describe StatsReply do
           :match => Match.new( :dl_type => 0x800, :nw_proto => 17 ),
           # flood the packet
           :actions => ActionOutput.new( FlowStatsController::OFPP_FLOOD ) )
+        sleep 1 # FIXME: wait to send_flow_mod_add
+        # send two packets
         send_packets "host1", "host2", :n_pkts => 2
         sleep 2 # FIXME: wait to send_packets
-        match = Match.new( :dl_type =>0x800, :nw_proto => 17 )
-        controller( "FlowStatsController" ).send_message( 0xabc,
-          FlowStatsRequest.new( :match => match ).to_packet.buffer )
+
         controller( "FlowStatsController" ).should_receive( :stats_reply ) do | message |
           message.type.should == 1
           message.stats[0].packet_count.should == 2
           message.stats[0].should respond_to :to_s
         end
+        match = Match.new( :dl_type =>0x800, :nw_proto => 17 )
+        controller( "FlowStatsController" ).send_message( 0xabc,
+          FlowStatsRequest.new( :match => match ).to_packet.buffer )
+        sleep 2 # FIXME: wait to send_message
       }
     end
   end
@@ -210,18 +214,21 @@ describe StatsReply do
           :match => Match.new( :dl_type => 0x800, :nw_proto => 17 ),
           # flood the packet
           :actions => ActionOutput.new( AggregateStatsController::OFPP_FLOOD ) )
-        # send two packets
+        sleep 1 # FIXME: wait to send_flow_mod_add
+        # send ten packets
         send_packets "host1", "host2", :n_pkts => 10
         sleep 2 # FIXME: wait to send_packets
-        match = Match.new( :dl_type =>0x800, :nw_proto => 17 )
-        controller( "AggregateStatsController" ).send_message( 0xabc,
-          AggregateStatsRequest.new( :match => match, :table_id => 0xff ).to_packet.buffer )
+
         controller( "AggregateStatsController" ).should_receive( :stats_reply ) do | message |
           message.type.should == 2
           message.stats[0].packet_count.should == 10
           message.stats[0].flow_count.should == 1
           message.stats[0].should respond_to :to_s
         end
+        match = Match.new( :dl_type =>0x800, :nw_proto => 17 )
+        controller( "AggregateStatsController" ).send_message( 0xabc,
+          AggregateStatsRequest.new( :match => match, :table_id => 0xff ).to_packet.buffer )
+        sleep 2 # FIXME: wait to send_message
       }
     end
   end
@@ -242,14 +249,16 @@ describe StatsReply do
           :match => Match.new( :dl_type => 0x800, :nw_proto => 17 ),
           :actions => ActionOutput.new( PortStatsController::OFPP_FLOOD ) )
         send_packets "host1", "host2"
+        sleep 2 # FIXME: wait to send_packets
         
-        controller( "PortStatsController" ).send_message( 0xabc,
-          PortStatsRequest.new( :port_no => 1 ).to_packet.buffer )
         controller( "PortStatsController" ).should_receive( :stats_reply ) do | message |
           message.type.should == 4
           message.stats[0].should be_an_instance_of(Trema::PortStatsReply)
           message.stats[0].should respond_to :to_s
         end
+        controller( "PortStatsController" ).send_message( 0xabc,
+          PortStatsRequest.new( :port_no => 1 ).to_packet.buffer )
+        sleep 2 # FIXME: wait to send_message
       }
     end
   end
@@ -268,15 +277,17 @@ describe StatsReply do
         controller( "TableStatsController" ).send_flow_mod_add( 0xabc,
           :actions => ActionOutput.new( TableStatsController::OFPP_FLOOD ) )
         send_packets "host1", "host2"
+        sleep 2 # FIXME: wait to send_packets
         
-        controller( "TableStatsController" ).send_message( 0xabc,
-          TableStatsRequest.new( :transaction_id => 123 ).to_packet.buffer )
         controller( "TableStatsController" ).should_receive( :stats_reply ) do | message |
           message.type.should == 3
           message.transaction_id.should == 123
           message.stats[0].should be_an_instance_of(Trema::TableStatsReply)
           message.stats[0].should respond_to :to_s
         end
+        controller( "TableStatsController" ).send_message( 0xabc,
+          TableStatsRequest.new( :transaction_id => 123 ).to_packet.buffer )
+        sleep 2 # FIXME: wait to send_message
       }
     end
   end

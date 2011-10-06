@@ -1,7 +1,7 @@
 /*
  * UDP header definitions
  *
- * Author: Naoyoshi Tada
+ * Author: Kazuya Suzuki
  *
  * Copyright (C) 2008-2011 NEC Corporation
  *
@@ -29,9 +29,6 @@
 #define UDP_H
 
 
-/**
- * UDP header information definitions
- */
 typedef struct udp_header {
   uint16_t src_port;
   uint16_t dst_port;

@@ -45,6 +45,8 @@
 
 extern void ( *die )( const char *format, ... );
 
+unsigned int hash_core( const void *key, int size );
+
 bool compare_string( const void *x, const void *y );
 unsigned int hash_string( const void *key );
 
@@ -62,6 +64,8 @@ bool string_to_datapath_id( const char *str, uint64_t *datapath_id );
 
 bool match_to_string( const struct ofp_match *match, char *str, size_t size );
 bool phy_port_to_string( const struct ofp_phy_port *phy_port, char *str, size_t size );
+
+uint16_t get_checksum( uint16_t *pos, uint32_t size );
 
 
 #endif // UTILITY_H

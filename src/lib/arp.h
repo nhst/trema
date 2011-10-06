@@ -1,7 +1,7 @@
 /*
  * ARP header definitions
  *
- * Author: Naoyoshi Tada
+ * Author: Kazuya Suzuki
  *
  * Copyright (C) 2008-2011 NEC Corporation
  *
@@ -26,6 +26,7 @@
  *
  * File containing function declarations and type definitions for ARP type
  * message handling Implementation.
+ *
  * @code
  * // Parses ARP header
  * if ( !valid_arp_packet( buf ) ) {
@@ -45,8 +46,11 @@
 
 
 /**
- * ARP Header Specification.
- * @see RFC 826 at http://tools.ietf.org/html/rfc826
+ * ARP Header Specification
+ * For protocol details, please refer RFC 826 at http://tools.ietf.org/html/rfc826
+ *
+ * TODO: Move the following type definition into packet_info.h and
+ *       remove this file.
  */
 typedef struct arp_header {
   uint16_t ar_hrd;
@@ -59,9 +63,6 @@ typedef struct arp_header {
   uint8_t tha[ ETH_ADDRLEN ];
   uint32_t tip;
 } __attribute__((packed)) arp_header_t;
-
-
-bool valid_arp_packet( const buffer *buf );
 
 
 #endif // ARP_H

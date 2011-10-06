@@ -1,7 +1,7 @@
 /*
- * Packet parser
+ * Queue implementation.
  *
- * Author: Naoyoshi Tada
+ * Author: Yasunobu Chiba
  *
  * Copyright (C) 2008-2011 NEC Corporation
  *
@@ -26,30 +26,50 @@
  *
  * File containing functions declarations for handling packets i.e, parsing a packet to find
  * its type (whether IPv4, or ARP) and calculating checksum if required.
+ *
  * @code
  * // Calculates checksum
  * get_checksum( ( uint16_t * ) packet_info( buf )->l3_data.ipv4, ( uint32_t ) hdr_len )
  * ...
+ *
  * // Validates packet header information
  * bool parse_ok = parse_packet( body );
  * if ( !parse_ok ) {
  * error( "Failed to parse a packet." );
  * ...
+ *
  * @endcode
  */
 
-#ifndef PACKET_PARSER_H
-#define PACKET_PARSER_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
 
-#define verify_checksum get_checksum
+#include "trema.h"
 
 
-uint16_t get_checksum( uint16_t *pos, uint32_t size );
-bool parse_packet( buffer *buf );
+typedef struct queue_element {
+  buffer *data;
+  struct queue_element *next;
+} queue_element;
+
+typedef struct queue {
+  queue_element *head;
+  queue_element *divider;
+  queue_element *tail;
+  int length;
+} queue;
 
 
-#endif // PACKET_PARSER_H
+queue *create_queue( void );
+bool delete_queue( queue *queue );
+bool enqueue( queue *queue, buffer *data );
+buffer *dequeue( queue *queue );
+buffer *peek( queue *queue );
+bool sort_queue( queue *queue, bool compare( const buffer *x, const buffer *y ) );
+
+
+#endif // QUEUE_H
 
 
 /*

@@ -23,13 +23,20 @@
  * @file
  *
  * @brief Contains functions declarations which handles timer functionality.
+
  * @code
  * // Intializes timer
  * init_timer();
+ *
  * // Adds, deletes, executes timer.
  * add_timer_event_callback( &interval, timer_event_callback, ( void * ) self );
+ *
+ * // Executing the pending timer events
  * executes_timer_events();
+
+ * // Deleting timer events scheduled
  * delete_timer_event_callback( timer_event_callback );
+ *
  * // Finalizes OpenFlow application interface.
  * finalize_timer();
  * @endcode

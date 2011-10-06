@@ -34,10 +34,6 @@
 #define BOOL_H
 
 
-/**
- * In case C++ compiler is being used, not bothering to define a new
- * enumerator; C++'s inbuilt boolean type is used
- */
 #ifdef __cplusplus
 // use C++ built-in bool type
 #elif defined __STDC__ && defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L

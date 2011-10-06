@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+<<<<<<< HEAD
 /**
  * @file
  *
@@ -29,6 +30,7 @@
  *
  * Logger Implementation routines and variables. Defines the various Logging priority
  * level and functions declarations used for Logging information.
+ *
  * @code
  * //Open the log file
  * init_log( "log.file", "log_directory", 0 );
@@ -47,6 +49,17 @@
  * @endcode
  */
  
+=======
+
+/**
+ * @file
+ *
+ * @brief Versatile support for logging messages with different levels
+ * of importance.
+ */
+
+
+>>>>>>> 7583b09a221ec1dabd4495be901e121c0904e2f2
 #ifndef LOG_H
 #define LOG_H
 
@@ -55,23 +68,23 @@
 
 
 /**
- * Enumerator defining Logging Priority Levels.
+ * Constants specifying the level of log messages.
  */
-enum {
+typedef enum {
   LOG_CRITICAL,
   LOG_ERROR,
   LOG_WARN,
   LOG_NOTICE,
   LOG_INFO,
   LOG_DEBUG,
-};
+} logging_level;
 
 
 bool init_log( const char *ident, const char *log_directory, bool run_as_daemon );
 bool finalize_log( void );
 
 bool set_logging_level( const char *level );
-extern int ( *get_logging_level )( void );
+extern logging_level ( *get_logging_level )( void );
 
 extern void ( *critical )( const char *format, ... );
 extern void ( *error )( const char *format, ... );

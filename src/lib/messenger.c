@@ -147,16 +147,6 @@ enum {
   MESSAGE_TYPE_REPLY,
 };
 
-/**
- * Message header
- */
-typedef struct message_header {
-  uint8_t version;         /*!< version = 0 (unused) */
-  uint8_t message_type;    /*!< MESSAGE_TYPE_ */
-  uint16_t tag;            /*!< user defined */
-  uint32_t message_length; /*!< message length including header */
-  uint8_t value[ 0 ];
-} message_header;
 
 /**
  * Message buffer
@@ -218,9 +208,10 @@ typedef struct send_queue {
 
 
 #define MESSENGER_RECV_BUFFER 100000
-static const uint32_t messenger_send_queue_length = 100000;
+static const uint32_t messenger_send_queue_length = 400000;
+static const uint32_t messenger_bucket_size = 2000;
 static const uint32_t messenger_recv_queue_length = 200000;
-static const uint32_t messenger_recv_queue_reserved = 2000;
+static const uint32_t messenger_recv_queue_reserved = 4000;
 
 char socket_directory[ PATH_MAX ];
 static bool running = false;
@@ -239,6 +230,7 @@ static void ( *external_callback )( void ) = NULL;
 
 /**
  * Deletes context from the Message context Hash Table.
+ *
  * @param key Transaction ID which is used as key for deletion
  * @param value Context to be deleted
  * @param user_data User data
@@ -261,6 +253,7 @@ _delete_context( void *key, void *value, void *user_data ) {
 
 /**
  * Wrapper to _delete_context.
+ *
  * @param context Context to be deleted
  * @return None
  */
@@ -274,6 +267,7 @@ delete_context( messenger_context *context ) {
 
 /**
  * Removing contexts from Hash table if they have expired.
+ *
  * @param key Transaction ID
  * @param value Messenger context
  * @param user_data User Data
@@ -294,6 +288,7 @@ _age_context( void *key, void *value, void *user_data ) {
 
 /**
  * Aging the contexts stored in Context Hash DB.
+ *
  * @param user_data User Data
  * @return None
  */
@@ -309,8 +304,9 @@ age_context_db( void *user_data ) {
 
 /**
  * Initializes the Messaging Service.
+ *
  * @param working_directory Working directory
- * @return bool True when messenger is initialized, else False
+ * @return bool True when messenger is initialized; false otherwise
  */
 bool
 init_messenger( const char *working_directory ) {
@@ -336,6 +332,7 @@ init_messenger( const char *working_directory ) {
 
 /**
  * Deletes context hash table.
+ *
  * @param None
  * @return None
  */
@@ -353,6 +350,7 @@ delete_context_db( void ) {
 
 /**
  * Releases the Message buffer.
+ *
  * @param buf Message buffer to release
  * @return None
  */
@@ -367,6 +365,7 @@ free_message_buffer( message_buffer *buf ) {
 
 /**
  * Returning the head of the unconsumed part of the message.
+ *
  * @param buf Message buffer
  * @return None
  */
@@ -378,6 +377,7 @@ get_message_buffer_head( message_buffer *buf ) {
 
 /**
  * Deletes a send queue.
+ *
  * @param sq Pointer to send queue
  * @return None
  */
@@ -403,6 +403,7 @@ delete_send_queue( send_queue *sq ) {
 
 /**
  * Deletes all send queues.
+ *
  * @param None
  * @return None
  */
@@ -429,6 +430,7 @@ delete_all_send_queues() {
 
 /**
  * Sends a message to Dump Service.
+ *
  * @param dump_type Dump message type
  * @param service_name Name of service
  * @param data Dump data
@@ -496,7 +498,8 @@ send_dump_message( uint16_t dump_type, const char *service_name, const void *dat
 
 
 /**
- * Closes accepted sockets and listening socket, and releases memories.
+ * Closes accepted sockets and listening socket, and releases any memory.
+ *
  * @param service_name Name of service
  * @param _rq Pointer to receive queue
  * @param user_data User Data
@@ -546,6 +549,7 @@ delete_receive_queue( void *service_name, void *_rq, void *user_data ) {
 
 /**
  * Deletes all receive queues.
+ *
  * @para None
  * @param None
  */
@@ -566,7 +570,7 @@ delete_all_receive_queues() {
 
 /**
  * Finalizes messenger by closing all queues and services.
- * @param None
+ *
  * @return bool True when sucessfully finalized, else False
  */
 bool
@@ -608,6 +612,7 @@ finalize_messenger() {
 
 /**
  * Creates a Message buffer.
+ *
  * @param size Size of buffer to be created
  * @param messenger_buffer Pointer to created messenger buffer
  * @return message_buffer* Pointer to message buffer
@@ -627,6 +632,7 @@ create_message_buffer( size_t size ) {
 
 /**
  * Creates receive queue.
+ *
  * @param service_name Name of service
  * @return receive_queue* Pointer to receive queue
  */
@@ -700,7 +706,8 @@ create_receive_queue( const char *service_name ) {
 
 
 /**
- * Adds a callback to be called when messages are received for a particular service. 
+ * Adds a callback to be called when messages are received for a particular service.
+ *
  * @param service_name Name of service 
  * @param message_type Type of message 
  * @param callback Callback function 
@@ -736,6 +743,7 @@ add_message_callback( const char *service_name, uint8_t message_type, void *call
 
 /**
  * Adds callback for message receive event.
+ *
  * @param service_name Name of service
  * @param callback Callback function
  * @return bool True when message is successfully added, else False
@@ -755,6 +763,7 @@ add_message_received_callback( const char *service_name, const callback_message_
 
 /**
  * Adds callback for message request event.
+ *
  * @param service_name Name of service
  * @param callback Callback function
  * @return bool True when message is successfully added, else False
@@ -775,6 +784,7 @@ add_message_requested_callback( const char *service_name,
 
 /**
  * Adds callback for message replied events.
+ *
  * @param callback Callback function 
  * @return bool True when message is successfully added, else False
  * @see add_message_callback
@@ -793,6 +803,7 @@ add_message_replied_callback( const char *service_name, void ( *callback )( uint
 
 /**
  * Deletes message callback from the message callback list.
+ *
  * @param service_name Name of service
  * @param message_type Type of message
  * @param callback Callback function 
@@ -839,6 +850,7 @@ delete_message_callback( const char *service_name, uint8_t message_type, void ( 
 
 /**
  * Deletes message received callback from message callback list.
+ *
  * @param service_name Name of service
  * @param callback Callback function 
  * @return bool True when message is successfully deleted, else False
@@ -858,6 +870,7 @@ delete_message_received_callback( const char *service_name, void ( *callback )( 
 
 /**
  * Deletes message request callback from message_callback list.
+ *
  * @param service_name Name of service
  * @param callback Callback function 
  * @return bool True when message is successfully deleted, else False
@@ -876,8 +889,10 @@ delete_message_requested_callback( const char *service_name,
 }
 
 
+
 /**
  * Deletes message replied callback from message_callback list.
+ *
  * @param service_name Name of service
  * @param callback Callback function 
  * @return bool True when message is successfully deleted, else False
@@ -897,6 +912,7 @@ delete_message_replied_callback( const char *service_name, void ( *callback )( u
 
 /**
  * Renames message received callback from message_callback list.
+ *
  * @param service_name Name of service
  * @param callback Callback function 
  * @return bool True when message received callback is renamed successfully, else False
@@ -937,6 +953,7 @@ rename_message_received_callback( const char *old_service_name, const char *new_
 
 /**
  * Calculates remaining bytes of message buffer.
+ *
  * @param message_buffer Message buffer
  * @return size_t Remaining bytes
  */
@@ -950,6 +967,7 @@ message_buffer_remain_bytes( message_buffer *buf ) {
 
 /**
  * Connects the Send queue of a service.
+ *
  * @param sq Pointer to send queue
  * @return int -1:error, 0:refused (retry), 1:connected
  */
@@ -1019,6 +1037,7 @@ send_queue_connect( send_queue *sq ) {
 
 /**
  * Creates a Send queue and connects to specified service name.
+ *
  * @param service_name Name of service
  * @return send_queue* Pointer to send queue
  */
@@ -1069,6 +1088,7 @@ create_send_queue( const char *service_name ) {
 
 /**
  * Writes data to message buffer.
+ *
  * @param buf Message buffer
  * @param data Data to be written 
  * @param len length of data
@@ -1098,6 +1118,7 @@ write_message_buffer( message_buffer *buf, const void *data, size_t len ) {
 
 /**
  * Pushes message to send queue.
+ *
  * @param service_name Name of service
  * @param message_type Type of message
  * @param tag Tag
@@ -1146,6 +1167,7 @@ push_message_to_send_queue( const char *service_name, const uint8_t message_type
 
 /**
  * Sends message by pushing to send queue.
+ *
  * @param service_name Name of service
  * @param tag Tag
  * @param data Data to send
@@ -1165,6 +1187,7 @@ send_message( const char *service_name, const uint16_t tag, const void *data, si
 
 /**
  * Inserts a new context into hash table.
+ *
  * @param user_data User Data
  * @return messenger_context* Pointer to message context
  */
@@ -1187,6 +1210,7 @@ insert_context( void *user_data ) {
 
 /**
  * Sends request message and pushes the message to send queue.
+ *
  * @param to_service_name Name of service to which message is send
  * @param from_service_name Name of service from where message is received
  * @param tag Tag
@@ -1230,6 +1254,7 @@ send_request_message( const char *to_service_name, const char *from_service_name
 
 /**
  * Creates a reply message and pushes the message to send queue.
+ *
  * @param handle Message handle
  * @param tag Tag
  * @param data Data to send as reply
@@ -1264,6 +1289,7 @@ send_reply_message( const messenger_context_handle *handle, const uint16_t tag, 
 
 /**
  * Checks queue status.
+ *
  * @param connected_count Number of queues connected 
  * @param sending_count Number of queues sending
  * @param reconnecting_count Number of queues reconnecting
@@ -1320,6 +1346,7 @@ number_of_send_queue( int *connected_count, int *sending_count, int *reconnectin
 
 /**
  * Initializing the pipe for communicating for Receive Queue.
+ *
  * @param read_set Pointer to fd_set
  * @return None
  */
@@ -1359,6 +1386,7 @@ set_recv_queue_fd_set( fd_set *read_set ) {
 
 /**
  * Adds a client file descriptor receive queue.
+ *
  * @param rq Pointer to receive queue
  * @param fd File descriptor  
  * @return None
@@ -1380,6 +1408,7 @@ add_recv_queue_client_fd( receive_queue *rq, int fd ) {
 
 /**
  * Accepts and sets SO_RCV_BUFFORCE or O_NONBLOCK to the provided File Descriptor (fd).
+ *
  * @param rq Pointer to receive queue
  * @param fd File descriptor
  * @return None
@@ -1421,6 +1450,7 @@ on_accept( int fd, receive_queue *rq ) {
 
 /**
  * Deletes client file descriptor from receive queue. 
+ *
  * @param rq Pointer to receive queue
  * @param fd File descriptor
  * @return int 0 when successfully deleted receive queue, else 1 
@@ -1451,6 +1481,7 @@ del_recv_queue_client_fd( receive_queue *rq, int fd ) {
 
 /**
  * Truncates message buffer.
+ *
  * @param buf Message buffer
  * @param len Length of message buffer
  * @return None
@@ -1480,6 +1511,7 @@ truncate_message_buffer( message_buffer *buf, size_t len ) {
 
 /**
  * Pulls message data from receive queue.
+ *
  * @param rq Pointer to receive queue
  * @param message_type Type of message
  * @param tag Tag
@@ -1530,6 +1562,7 @@ pull_from_recv_queue( receive_queue *rq, uint8_t *message_type, uint16_t *tag, v
 
 /**
  * Lookup a context from hash entry.
+ *
  * @param transaction_id Transaction ID
  * @return messenger_context* Pointer to message context
  */
@@ -1543,6 +1576,7 @@ get_context( uint32_t transaction_id ) {
 
 /**
  * Calls message callbacks. Selects from message type and respective callback is issued.
+ *
  * @param rq Pointer to receive queue
  * @param message_type Type of message
  * @param tag Tag
@@ -1633,6 +1667,7 @@ call_message_callbacks( receive_queue *rq, const uint8_t message_type, const uin
 
 /**
  * Receives data from remote.
+ *
  * @param fd File descriptor 
  * @param rq Pointer to receive queue
  * @return None
@@ -1692,6 +1727,7 @@ on_recv( int fd, receive_queue *rq ) {
 
 /**
  * Checks fd_set for data received from remote.
+ *
  * @param read_set Pointer to read set
  * @return None
  */
@@ -1727,6 +1763,7 @@ check_recv_queue_fd_isset( fd_set *read_set ) {
 
 /**
  * Sets send queue to fd_set.
+ *
  * @param read_set Pointer to read set
  * @param write_set Pointer to write set
  * @return None
@@ -1778,12 +1815,24 @@ set_send_queue_fd_set( fd_set *read_set, fd_set *write_set ) {
 }
 
 
-/**
- * Sends data to remote.
- * @param fd File descriptor
- * @param sq Pointer to send queue
- * @return None
- */
+static uint32_t
+get_send_data( send_queue *sq, size_t offset ) {
+  assert( sq != NULL );
+
+  message_header *header;
+  uint32_t length = 0;
+  while ( ( sq->buffer->data_length - offset ) >= sizeof( message_header ) ) {
+    header = ( message_header * ) ( ( char * ) get_message_buffer_head( sq->buffer ) + offset );
+    if ( length + header->message_length > messenger_bucket_size ) {
+      break;
+    }
+    length += header->message_length;
+    offset += header->message_length;
+  }
+  return length;
+}
+
+
 static void
 on_send( int fd, send_queue *sq ) {
   assert( sq != NULL );
@@ -1796,16 +1845,14 @@ on_send( int fd, send_queue *sq ) {
     return;
   }
 
-  message_header *header;
+  void *data;
   size_t send_len;
   ssize_t sent_len;
   size_t sent_total = 0;
-  int sent_count = 0;
 
-  while ( ( ( sq->buffer->data_length - sent_total ) >= sizeof( message_header ) ) && ( sent_count < 128 ) ) {
-    header = ( message_header * ) ( ( char * ) get_message_buffer_head( sq->buffer ) + sent_total );
-    send_len = ( size_t ) header->message_length;
-    sent_len = send( fd, header, send_len, MSG_DONTWAIT );
+  while ( ( send_len = get_send_data( sq, sent_total ) ) > 0 ) {
+    data = ( ( char * ) get_message_buffer_head( sq->buffer ) + sent_total );
+    sent_len = send( fd, data, send_len, MSG_DONTWAIT );
     if ( sent_len == -1 ) {
       int err = errno;
       if ( err != EAGAIN && err != EWOULDBLOCK ) {
@@ -1824,9 +1871,8 @@ on_send( int fd, send_queue *sq ) {
       return;
     }
     assert( sent_len != 0 );
-    send_dump_message( MESSENGER_DUMP_SENT, sq->service_name, header, ( uint32_t ) sent_len );
+    send_dump_message( MESSENGER_DUMP_SENT, sq->service_name, data, ( uint32_t ) sent_len );
     sent_total += ( size_t ) sent_len;
-    sent_count++;
   }
   truncate_message_buffer( sq->buffer, sent_total );
 }
@@ -1834,6 +1880,7 @@ on_send( int fd, send_queue *sq ) {
 
 /**
  * Checks fd_sets for send/receive data to/from remote.
+ *
  * @param read_set Pointer to read set
  * @param write_set Pointer to write set
  * @return None
@@ -1871,6 +1918,7 @@ check_send_queue_fd_isset( fd_set *read_set, fd_set *write_set ) {
 
 /**
  * Function which is used for flushing all pending events.
+ *
  * @param None
  * @return None
  */
@@ -1925,6 +1973,7 @@ run_once( void ) {
 
 /**
  * Flushes the messenger.
+ *
  * @param None
  * @return None
  */
@@ -1946,6 +1995,7 @@ flush_messenger() {
 
 /**
  * Starts messenger.
+ *
  * @param None
  * @return None
  */
@@ -1971,6 +2021,7 @@ start_messenger() {
 
 /**
  * Terminates the messenger.
+ *
  * @param None
  * @return None
  */
@@ -1986,6 +2037,7 @@ stop_messenger() {
 
 /**
  * Starts messenger dump.
+ *
  * @param dump_app_name Dump application name
  * @param dump_service_name Dump service name
  * @return None
@@ -2008,6 +2060,7 @@ start_messenger_dump( const char *dump_app_name, const char *dump_service_name )
 
 /**
  * Stops messenger dump.
+ *
  * @param None
  * @return None
  */
@@ -2035,6 +2088,7 @@ stop_messenger_dump( void ) {
 
 /**
  * Enables messenger dump.
+ *
  * @param None
  * @return bool
  */
@@ -2050,6 +2104,7 @@ messenger_dump_enabled( void ) {
 
 /**
  * Sets external fd_set callback.
+ *
  * @param callback Callback function
  * @return None
  */
@@ -2063,6 +2118,7 @@ set_fd_set_callback( void ( *callback )( fd_set *read_set, fd_set *write_set ) )
 
 /**
  * Sets external fd_isset callback.
+ *
  * @param callback Callback function
  * @return None
  */
@@ -2076,6 +2132,7 @@ set_check_fd_isset_callback( void ( *callback )( fd_set *read_set, fd_set *write
 
 /**
  * Sets external callback which can be called when the Messenger initializes or terminates.
+ *
  * @param callback Callback function
  * @return bool
  */

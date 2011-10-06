@@ -29,6 +29,7 @@
 #include <string.h>
 #include "cmockery_trema.h"
 #include "log.h"
+#include "ipv4.h"
 #include "trema_wrapper.h"
 #include "utility.h"
 
@@ -83,6 +84,15 @@ static void
 test_die() {
   expect_string( mock_critical, output, "Bye!" );
   die( "Bye!" );
+}
+
+
+static void
+test_hash_core() {
+  unsigned char bin1[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+  unsigned char bin2[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+
+  assert_true( hash_core( bin1, sizeof( bin1 ) ) == hash_core( bin2, sizeof( bin2 ) ) );
 }
 
 
@@ -247,6 +257,54 @@ test_phy_port_to_string_fails_with_insufficient_buffer() {
 }
 
 
+static void
+test_get_checksum_udp_packet() {
+  ipv4_header_t ipv4_header;
+
+  /* Create a test packet. */
+  memset( &ipv4_header, 0, sizeof( ipv4_header ) );
+  ipv4_header.version = 4;
+  ipv4_header.ihl = 5;
+  ipv4_header.tos = 0;
+  ipv4_header.tot_len = htons( 0x004c );
+  ipv4_header.id = htons( 0x48d8 );
+  ipv4_header.frag_off = htons( 0 );
+  ipv4_header.ttl = 0x80;
+  ipv4_header.protocol = 0x11;
+  ipv4_header.check = 0;
+  ipv4_header.saddr = htonl( 0x0a3835af );
+  ipv4_header.daddr = htonl( 0x0a3837ff );
+
+  uint16_t checksum = get_checksum( ( uint16_t * ) &ipv4_header,
+                                    sizeof( ipv4_header ) );
+  assert_int_equal( checksum, 0xab6f );
+}
+
+
+static void
+test_get_checksum_icmp_packet() {
+  ipv4_header_t ipv4_header;
+
+  /* Create a test packet. */
+  memset( &ipv4_header, 0, sizeof( ipv4_header ) );
+  ipv4_header.version = 4;
+  ipv4_header.ihl = 5;
+  ipv4_header.tos = 0;
+  ipv4_header.tot_len = htons( 0x0054 );
+  ipv4_header.id = htons( 0xaec3 );
+  ipv4_header.frag_off = htons( 0 );
+  ipv4_header.ttl = 0x40;
+  ipv4_header.protocol = 0x01;
+  ipv4_header.check = 0;
+  ipv4_header.saddr = htonl( 0xc0a8642b );
+  ipv4_header.daddr = htonl( 0xc0a8642c );
+
+  uint16_t checksum = get_checksum( ( uint16_t * ) &ipv4_header,
+                                    sizeof( ipv4_header ) );
+  assert_int_equal( checksum, 0x3d82 );
+}
+
+
 /********************************************************************************
  * Run tests.
  ********************************************************************************/
@@ -255,6 +313,8 @@ int
 main() {
   const UnitTest tests[] = {
     unit_test_setup_teardown( test_die, setup, teardown ),
+
+    unit_test( test_hash_core ),
 
     unit_test( test_compare_string ),
     unit_test( test_hash_string ),
@@ -276,6 +336,9 @@ main() {
 
     unit_test( test_phy_port_to_string ),
     unit_test( test_phy_port_to_string_fails_with_insufficient_buffer ),
+
+    unit_test( test_get_checksum_udp_packet ),
+    unit_test( test_get_checksum_icmp_packet ),
   };
   setup_leak_detector();
   return run_tests( tests );

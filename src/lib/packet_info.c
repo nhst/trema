@@ -1,5 +1,5 @@
 /*
- * Author: Naoyoshi Tada
+ * Author: Kazuya Suzuki
  *
  * Copyright (C) 2008-2011 NEC Corporation
  *
@@ -19,19 +19,22 @@
 
 
 #include <assert.h>
+#include "checks.h"
 #include "packet_info.h"
 #include "wrapper.h"
+#include "trema.h"
 
 
 /**
  * Releases the memory allocated to structure of type packet_header_info.
+ *
  * @param buf Pointer to buffer type structure
  * @return None
  */
-static void
-free_packet_header_info( buffer *buf ) {
-  assert( buf != NULL );
-  assert( buf->user_data != NULL );
+void
+free_packet_info( buffer *buf ) {
+  die_if_NULL( buf );
+  die_if_NULL( buf->user_data );
 
   xfree( buf->user_data );
   buf->user_data = NULL;
@@ -41,25 +44,21 @@ free_packet_header_info( buffer *buf ) {
 
 /**
  * Allocates memory to structure of type packet_header_info.
+ *
  * @param buf Pointer to buffer type structure
  * @return None
  */
 void
-alloc_packet( buffer *buf ) {
-  assert( buf != NULL );
+calloc_packet_info( buffer *buf ) {
+  die_if_NULL( buf );
 
-  packet_header_info *header_info = xcalloc( 1, sizeof( packet_header_info ) );
-  assert( header_info != NULL );
+  void *user_data = xcalloc( 1, sizeof( packet_info ) );
+  assert( user_data != NULL );
 
-  header_info->ethtype = 0;
-  header_info->nvtags = 0;
-  header_info->ipproto = 0;
-  header_info->l2_data.l2 = NULL;
-  header_info->vtag = NULL;
-  header_info->l3_data.l3 = NULL;
-  header_info->l4_data.l4 = NULL;
-  buf->user_data = header_info;
-  buf->user_data_free_function = free_packet_header_info;
+  memset( user_data, 0, sizeof( packet_info ) );
+
+  buf->user_data = user_data;
+  buf->user_data_free_function = free_packet_info;
 }
 
 
@@ -68,15 +67,112 @@ alloc_packet( buffer *buf ) {
  *
  * Releases the memory allocated to structure of type buffer.
  * @param buf Pointer to buffer type structure
- * @return None
+ * @return packet_info TODO
  */
-void
-free_packet( buffer *buf ) {
-  assert( buf != NULL );
+packet_info
+get_packet_info( const buffer *frame ) {
+  die_if_NULL( frame );
 
-  free_packet_header_info( buf );
-  free_buffer( buf );
+  packet_info info;
+  
+  if ( frame->user_data != NULL ) {
+    info = *( packet_info * ) frame->user_data;
+  } 
+  else {
+    memset( &info, 0, sizeof( info ) );
+  }
+  
+  return info;
 }
+
+
+static bool
+if_packet_type( const buffer *frame, const uint32_t type ) {
+  die_if_NULL( frame );
+  packet_info packet_info = get_packet_info( frame );
+  return ( ( packet_info.format & type ) == type );
+}
+
+
+bool
+packet_type_eth_dix( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, ETH_DIX );
+}
+
+
+bool
+packet_type_eth_vtag( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, ETH_8021Q );
+}
+
+
+bool
+packet_type_eth_raw( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, ETH_8023_RAW );
+}
+
+
+bool
+packet_type_eth_llc( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, ETH_8023_LLC );
+}
+
+
+bool
+packet_type_ether( const buffer *frame ) {
+  die_if_NULL( frame );
+  return ( if_packet_type( frame, ETH_DIX ) |
+           if_packet_type( frame, ETH_8023_RAW ) |
+           if_packet_type( frame, ETH_8023_LLC ) |
+           if_packet_type( frame, ETH_8023_SNAP ) );
+}
+
+
+bool
+packet_type_eth_snap( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, ETH_8023_SNAP );
+}
+
+
+bool
+packet_type_arp( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, NW_ARP );
+}
+
+
+bool
+packet_type_ipv4( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, NW_IPV4 );
+}
+
+
+bool
+packet_type_icmpv4( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, NW_ICMPV4 );
+}
+
+
+bool
+packet_type_ipv4_tcp( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, NW_IPV4 | TP_TCP );
+}
+
+
+bool
+packet_type_ipv4_udp( const buffer *frame ) {
+  die_if_NULL( frame );
+  return if_packet_type( frame, NW_IPV4 | TP_UDP );
+}
+
 
 
 /*
